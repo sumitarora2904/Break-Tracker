@@ -12,16 +12,6 @@ A sleek, dark-themed Progressive Web App (PWA) that allows you to track breaks s
 - 📱 Fully installable as a PWA (Android, iOS, Desktop)
 - ⚙️ Offline-ready via Service Worker
 
-## 📁 File Structure
-
-break-tracker/
-├── index.html
-├── manifest.json
-├── service-worker.js
-├── icon-192.png
-├── icon-512.png
-└── README.md
-
 ## 🛠️ Getting Started
 
 1. Clone the Repository
