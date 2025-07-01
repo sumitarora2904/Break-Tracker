@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Break Tracker</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#121212" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: #121212;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 400px;
+      width: 90%;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #fff;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      font-size: 0.95em;
+    }
+
+    select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: none;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+
+    select option {
+      background-color: #222;
+      color: #fff;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: none;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    input::placeholder {
+      color: #ccc;
+    }
+
+    button {
+      margin-top: 20px;
+      background: rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s ease;
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      padding: 10px;
+      width: 100%;
+    }
+
+    button:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .log {
+      margin-top: 20px;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 10px;
+      border-radius: 10px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .log-entry {
+      margin-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 5px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #timerDisplay {
+      font-size: 1.5em;
+      margin-top: 10px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    #totalBreakTime {
+      margin-top: 20px;
+      font-size: 1.2em;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Break Tracker</h2>
+
+    <label for="breakTypeSelect">Break Type:</label>
+    <select id="breakTypeSelect" onchange="toggleCustomInput()">
+      <option value="Meal">Meal</option>
+      <option value="Washroom">Washroom</option>
+      <option value="Random">Random</option>
+      <option value="Custom">Custom</option>
+    </select>
+
+    <input type="text" id="customBreakType" class="hidden" placeholder="Enter custom break type" />
+
+    <button id="startButton" onclick="startTimer()">Start Timer</button>
+    <button id="stopButton" onclick="stopTimer()" disabled>Stop Timer</button>
+
+    <div id="timerDisplay">00:00</div>
+
+    <div class="log" id="breakLog">
+      <h4>Break Log:</h4>
+    </div>
+
+    <div id="totalBreakTime">
+      <strong>Total Break Time: </strong><span id="totalTime">00:00</span>
+    </div>
+  </div>
+
+  <script>
+    let startTime = null;
+    let endTime = null;
+    let timerInterval = null;
+    let totalBreakTimeInSeconds = 0;
+
+    function toggleCustomInput() {
+      const select = document.getElementById("breakTypeSelect");
+      const customInput = document.getElementById("customBreakType");
+      customInput.classList.toggle("hidden", select.value !== "Custom");
+    }
+
+    function startTimer() {
+      const select = document.getElementById("breakTypeSelect");
+      const customInput = document.getElementById("customBreakType");
+      const type = select.value === "Custom" ? customInput.value.trim() : select.value;
+
+      if (!type) {
+        alert('Please select or enter a break type.');
+        return;
+      }
+
+      startTime = new Date();
+      document.getElementById('startButton').disabled = true;
+      document.getElementById('stopButton').disabled = false;
+
+      timerInterval = setInterval(function() {
+        const elapsedTime = new Date() - startTime;
+        const minutes = Math.floor(elapsedTime / 60000);
+        const seconds = Math.floor((elapsedTime % 60000) / 1000);
+        document.getElementById('timerDisplay').innerText = `${pad(minutes)}:${pad(seconds)}`;
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timerInterval);
+
+      endTime = new Date();
+      const elapsedTime = endTime - startTime;
+      const minutes = Math.floor(elapsedTime / 60000);
+      const seconds = Math.floor((elapsedTime % 60000) / 1000);
+
+      const type = document.getElementById("breakTypeSelect").value === "Custom"
+        ? document.getElementById("customBreakType").value.trim()
+        : document.getElementById("breakTypeSelect").value;
+
+      if (!type) {
+        alert('Please select or enter a break type.');
+        return;
+      }
+
+      const log = document.getElementById('breakLog');
+      const entry = document.createElement('div');
+      entry.classList.add('log-entry');
+      entry.innerHTML = `<strong>${type}</strong>: From ${startTime.toLocaleTimeString()} to ${endTime.toLocaleTimeString()} (Duration: ${pad(minutes)}:${pad(seconds)})`;
+      log.appendChild(entry);
+
+      totalBreakTimeInSeconds += (minutes * 60) + seconds;
+      updateTotalBreakTime();
+
+      document.getElementById('startButton').disabled = false;
+      document.getElementById('stopButton').disabled = true;
+      document.getElementById('timerDisplay').innerText = "00:00";
+
+      if (document.getElementById("breakTypeSelect").value === "Custom") {
+        document.getElementById("customBreakType").value = '';
+      }
+    }
+
+    function updateTotalBreakTime() {
+      const totalMinutes = Math.floor(totalBreakTimeInSeconds / 60);
+      const totalSeconds = totalBreakTimeInSeconds % 60;
+      document.getElementById('totalTime').innerText = `${pad(totalMinutes)}:${pad(totalSeconds)}`;
+    }
+
+    function pad(num) {
+      return num < 10 ? `0${num}` : num;
+    }
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('service-worker.js')
+          .then(() => console.log('Service Worker registered'))
+          .catch(err => console.error('Service Worker registration failed:', err));
+      });
+    }
+  </script>
+</body>
+</html>
