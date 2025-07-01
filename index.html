@@ -26,6 +26,7 @@
       justify-content: center;
       align-items: center;
       color: #fff;
+      position: relative;
     }
 
     .container {
@@ -36,6 +37,8 @@
       -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.1);
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      max-width: 400px;
+      width: 100%;
     }
 
     h2 {
@@ -130,9 +133,26 @@
       font-size: 1.2em;
       text-align: center;
     }
+
+    #resetButton {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    #resetButton:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
   </style>
 </head>
 <body>
+  <div id="resetButton" onclick="resetData()">Reset Data</div>
   <div class="container">
     <h2>Break Tracker</h2>
 
@@ -150,14 +170,14 @@
     <button id="startButton" onclick="startTimer()">Start Timer</button>
     <button id="stopButton" onclick="stopTimer()" disabled>Stop Timer</button>
 
-    <div id="timerDisplay">00:00</div>
+    <div id="timerDisplay">00:00:00</div>
 
     <div class="log" id="breakLog">
       <h4>Break Log:</h4>
     </div>
 
     <div id="totalBreakTime">
-      <strong>Total Break Time: </strong><span id="totalTime">00:00</span>
+      <strong>Total Break Time: </strong><span id="totalTime">00:00:00</span>
     </div>
   </div>
 
@@ -165,7 +185,14 @@
     let startTime = null;
     let endTime = null;
     let timerInterval = null;
-    let totalBreakTimeInSeconds = 0;
+    let totalBreakTimeInSeconds = parseInt(localStorage.getItem('totalBreakTime') || '0');
+    const breakLog = JSON.parse(localStorage.getItem('breakLog')) || [];
+
+    // Load saved data from localStorage
+    window.onload = function() {
+      updateBreakLog();
+      updateTotalBreakTime();
+    }
 
     function toggleCustomInput() {
       const select = document.getElementById("breakTypeSelect");
@@ -189,9 +216,10 @@
 
       timerInterval = setInterval(function() {
         const elapsedTime = new Date() - startTime;
-        const minutes = Math.floor(elapsedTime / 60000);
+        const hours = Math.floor(elapsedTime / 3600000);
+        const minutes = Math.floor((elapsedTime % 3600000) / 60000);
         const seconds = Math.floor((elapsedTime % 60000) / 1000);
-        document.getElementById('timerDisplay').innerText = `${pad(minutes)}:${pad(seconds)}`;
+        document.getElementById('timerDisplay').innerText = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
       }, 1000);
     }
 
@@ -200,7 +228,8 @@
 
       endTime = new Date();
       const elapsedTime = endTime - startTime;
-      const minutes = Math.floor(elapsedTime / 60000);
+      const hours = Math.floor(elapsedTime / 3600000);
+      const minutes = Math.floor((elapsedTime % 3600000) / 60000);
       const seconds = Math.floor((elapsedTime % 60000) / 1000);
 
       const type = document.getElementById("breakTypeSelect").value === "Custom"
@@ -212,32 +241,62 @@
         return;
       }
 
-      const log = document.getElementById('breakLog');
-      const entry = document.createElement('div');
-      entry.classList.add('log-entry');
-      entry.innerHTML = `<strong>${type}</strong>: From ${startTime.toLocaleTimeString()} to ${endTime.toLocaleTimeString()} (Duration: ${pad(minutes)}:${pad(seconds)})`;
-      log.appendChild(entry);
+      const logEntry = {
+        type,
+        startTime: startTime.toLocaleTimeString(),
+        endTime: endTime.toLocaleTimeString(),
+        duration: `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
+      };
+      
+      breakLog.push(logEntry);
+      localStorage.setItem('breakLog', JSON.stringify(breakLog));
 
-      totalBreakTimeInSeconds += (minutes * 60) + seconds;
+      totalBreakTimeInSeconds += (hours * 3600) + (minutes * 60) + seconds;
+      localStorage.setItem('totalBreakTime', totalBreakTimeInSeconds);
+
+      updateBreakLog();
       updateTotalBreakTime();
 
       document.getElementById('startButton').disabled = false;
       document.getElementById('stopButton').disabled = true;
-      document.getElementById('timerDisplay').innerText = "00:00";
+      document.getElementById('timerDisplay').innerText = "00:00:00";
 
       if (document.getElementById("breakTypeSelect").value === "Custom") {
         document.getElementById("customBreakType").value = '';
       }
     }
 
+    function updateBreakLog() {
+      const log = document.getElementById('breakLog');
+      log.innerHTML = '<h4>Break Log:</h4>';
+      breakLog.forEach(entry => {
+        const logEntry = document.createElement('div');
+        logEntry.classList.add('log-entry');
+        logEntry.innerHTML = `<strong>${entry.type}</strong>: From ${entry.startTime} to ${entry.endTime} (Duration: ${entry.duration})`;
+        log.appendChild(logEntry);
+      });
+    }
+
     function updateTotalBreakTime() {
-      const totalMinutes = Math.floor(totalBreakTimeInSeconds / 60);
+      const totalHours = Math.floor(totalBreakTimeInSeconds / 3600);
+      const totalMinutes = Math.floor((totalBreakTimeInSeconds % 3600) / 60);
       const totalSeconds = totalBreakTimeInSeconds % 60;
-      document.getElementById('totalTime').innerText = `${pad(totalMinutes)}:${pad(totalSeconds)}`;
+      document.getElementById('totalTime').innerText = `${pad(totalHours)}:${pad(totalMinutes)}:${pad(totalSeconds)}`;
     }
 
     function pad(num) {
       return num < 10 ? `0${num}` : num;
+    }
+
+    function resetData() {
+      if (confirm("Are you sure you want to reset all data?")) {
+        localStorage.removeItem('totalBreakTime');
+        localStorage.removeItem('breakLog');
+        totalBreakTimeInSeconds = 0;
+        breakLog.length = 0;
+        updateBreakLog();
+        updateTotalBreakTime();
+      }
     }
   </script>
 
